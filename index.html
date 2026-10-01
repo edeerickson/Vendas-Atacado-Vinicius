@@ -662,28 +662,30 @@ const diamAte037 = ['0,12','0,16','0,20','0,24','0,28','0,32','0,37'];
 const diamAte028 = ['0,12','0,16','0,20','0,24','0,28'];
 
 // Tabela técnica oficial do catálogo: libra (IB) e PE por diâmetro.
-// 4X e 8X compartilham a mesma tabela técnica; 16X (Marfim) tem valores próprios.
-// Bitolas 0,80 e 1,20 (exclusivas do 8X) não têm dado técnico oficial no catálogo — ficam sem lb/PE.
-const SPEC_4X8X = {
+// 4X e 8X têm a mesma tabela de PE, mas libragens diferentes (conforme catálogo). 16X (Marfim) tem valores próprios.
+const SPEC_4X = {
   '0,12':{ib:10,  pe:0.6}, '0,16':{ib:15,  pe:0.8}, '0,20':{ib:20,  pe:1.0},
   '0,24':{ib:25,  pe:1.2}, '0,28':{ib:30,  pe:2.0}, '0,32':{ib:40,  pe:3.0},
   '0,37':{ib:50,  pe:4.0}, '0,40':{ib:60,  pe:5.0}, '0,48':{ib:80,  pe:6.0},
   '0,55':{ib:100, pe:8.0},
 };
 // Bitolas especiais, exclusivas do 8X (150m) — dado técnico oficial confirmado
-const SPEC_8X_EXTRA = {
-  '0,80':{ib:200, pe:10.0}, '1,20':{ib:300, pe:15.0},
+const SPEC_8X = {
+  '0,12':{ib:15,  pe:0.6}, '0,16':{ib:20,  pe:0.8}, '0,20':{ib:25,  pe:1.0},
+  '0,24':{ib:30,  pe:1.2}, '0,28':{ib:40,  pe:2.0}, '0,32':{ib:50,  pe:3.0},
+  '0,37':{ib:60,  pe:4.0}, '0,40':{ib:70,  pe:5.0}, '0,48':{ib:90,  pe:6.0},
+  '0,55':{ib:120, pe:8.0}, '0,80':{ib:200, pe:10.0}, '1,20':{ib:300, pe:15.0},
 };
 const SPEC_16X = {
   '0,20':{ib:30, pe:1.0}, '0,24':{ib:40, pe:1.2}, '0,28':{ib:50, pe:2.0},
   '0,32':{ib:60, pe:3.0}, '0,37':{ib:70, pe:4.0}, '0,40':{ib:90, pe:5.0},
 };
-function getSpec(catClass, bitola){
-  const table = catClass === 'marfim' ? SPEC_16X : SPEC_4X8X;
-  return table[bitola] || SPEC_8X_EXTRA[bitola] || null;
+function getSpec(catClass, bitola, fil){
+  const table = catClass === 'marfim' ? SPEC_16X : (fil === '8X' ? SPEC_8X : SPEC_4X);
+  return table[bitola] || null;
 }
-function bitolaLabel(catClass, bitola){
-  const spec = getSpec(catClass, bitola);
+function bitolaLabel(catClass, bitola, fil){
+  const spec = getSpec(catClass, bitola, fil);
   if(!spec) return `${bitola} mm`;
   return `${bitola} mm — ${spec.ib} lb — PE ${spec.pe.toFixed(1).replace('.', ',')}`;
 }
@@ -704,14 +706,12 @@ const rows4X = [];
 addBucket(rows4X, 150,  diamFull,   30.00);
 addBucket(rows4X, 300,  diamFull,   50.00);
 addBucket(rows4X, 600,  diamAte037, 85.00);
-addBucket(rows4X, 1200, diamAte028, 165.00);
 
 const rows8X = [];
 addBucket(rows8X, 150,  diamFull,        42.00);
 addBucket(rows8X, 150,  ['0,80','1,20'], 83.00);
 addBucket(rows8X, 300,  diamFull,        72.00);
 addBucket(rows8X, 600,  diamAte037,      127.00);
-addBucket(rows8X, 1200, diamAte028,      237.00);
 
 const rows16X = [];
 addBucket(rows16X, 150,  ['0,20','0,24','0,28'], 133.00);
@@ -720,8 +720,6 @@ addBucket(rows16X, 300,  ['0,20','0,24','0,28'], 227.00);
 addBucket(rows16X, 300,  ['0,32','0,37','0,40'], 217.00);
 addBucket(rows16X, 600,  ['0,20','0,24','0,28'], 387.00);
 addBucket(rows16X, 600,  ['0,32','0,37','0,40'], 367.00);
-addBucket(rows16X, 1200, ['0,20','0,24','0,28'], 657.00);
-addBucket(rows16X, 1200, ['0,32','0,37','0,40'], 597.00);
 
 const priceMulti = { '4X': rows4X, '8X': rows8X };
 
@@ -1170,13 +1168,13 @@ function getMultiRows(catClass, fil){
 function multiCardHTML(catClass, lineName, filList){
   return filList.map(fil=>{
     const rows = getMultiRows(catClass, fil);
-    const metrosOptions = [...new Set(rows.map(r=>r.metros))]; // ordem de aparição: 150,300,600,1200
+    const metrosOptions = [...new Set(rows.map(r=>r.metros))]; // ordem de aparição: 150,300,600
     const metrosId = `metros-${catClass}-${fil}`;
     const bitolaId = `bitola-${catClass}-${fil}`;
     const priceId  = `price-${catClass}-${fil}`;
     const metrosHtml = metrosOptions.map(m=>`<option value="${m}">${m}m</option>`).join('');
     const firstBitolas = rows.filter(r=>r.metros===metrosOptions[0]);
-    const bitolaHtml = firstBitolas.map(r=>`<option value="${r.bitola}">${bitolaLabel(catClass, r.bitola)}</option>`).join('');
+    const bitolaHtml = firstBitolas.map(r=>`<option value="${r.bitola}">${bitolaLabel(catClass, r.bitola, fil)}</option>`).join('');
     const imgKey = catClass==='marfim' ? 'marfim_16x' : `${catClass}_${fil.toLowerCase()}`;
     const specId = `spec-${catClass}-${fil}`;
     return `
@@ -1197,7 +1195,7 @@ function multiCardHTML(catClass, lineName, filList){
               <select id="${bitolaId}" onchange="onBitolaChange('${catClass}','${fil}')">${bitolaHtml}</select>
             </div>
           </div>
-          <div class="spec-chips" id="${specId}">${specChipsHTML(getSpec(catClass, firstBitolas[0].bitola), firstBitolas[0].bitola)}</div>
+          <div class="spec-chips" id="${specId}">${specChipsHTML(getSpec(catClass, firstBitolas[0].bitola, fil), firstBitolas[0].bitola)}</div>
           <div class="price-line">
             <div class="price-block">
               <span class="lbl">Compra</span>
@@ -1229,15 +1227,15 @@ function onMetrosChange(catClass, fil){
   const metros = parseInt(document.getElementById(`metros-${catClass}-${fil}`).value);
   const matching = rows.filter(r=>r.metros===metros);
   const bitolaSel = document.getElementById(`bitola-${catClass}-${fil}`);
-  bitolaSel.innerHTML = matching.map(r=>`<option value="${r.bitola}">${bitolaLabel(catClass, r.bitola)}</option>`).join('');
+  bitolaSel.innerHTML = matching.map(r=>`<option value="${r.bitola}">${bitolaLabel(catClass, r.bitola, fil)}</option>`).join('');
   document.getElementById(`price-${catClass}-${fil}`).textContent = fmt(matching[0].preco);
-  document.getElementById(`spec-${catClass}-${fil}`).innerHTML = specChipsHTML(getSpec(catClass, matching[0].bitola), matching[0].bitola);
+  document.getElementById(`spec-${catClass}-${fil}`).innerHTML = specChipsHTML(getSpec(catClass, matching[0].bitola, fil), matching[0].bitola);
 }
 
 function onBitolaChange(catClass, fil){
   const row = currentMultiRow(catClass, fil);
   document.getElementById(`price-${catClass}-${fil}`).textContent = fmt(row.preco);
-  document.getElementById(`spec-${catClass}-${fil}`).innerHTML = specChipsHTML(getSpec(catClass, row.bitola), row.bitola);
+  document.getElementById(`spec-${catClass}-${fil}`).innerHTML = specChipsHTML(getSpec(catClass, row.bitola, fil), row.bitola);
 }
 
 function addMultiToCart(catClass, lineName, fil, btn){
