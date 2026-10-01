@@ -252,7 +252,6 @@
   .price-line .price-block{display:flex; flex-direction:column;}
   .price-line .price-block .lbl{font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);}
   .price-line .price{font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; color:var(--navy);}
-  .price-line .price.venda{color:var(--good); font-size:15px;}
   .price-line .price small{font-size:11px; font-weight:400; color:var(--ink-soft);}
 
   .add-row{display:flex; align-items:stretch; margin-top:2px;}
@@ -671,13 +670,17 @@ const SPEC_4X8X = {
   '0,37':{ib:50,  pe:4.0}, '0,40':{ib:60,  pe:5.0}, '0,48':{ib:80,  pe:6.0},
   '0,55':{ib:100, pe:8.0},
 };
+// Bitolas especiais, exclusivas do 8X (150m) — dado técnico oficial confirmado
+const SPEC_8X_EXTRA = {
+  '0,80':{ib:200, pe:10.0}, '1,20':{ib:300, pe:15.0},
+};
 const SPEC_16X = {
   '0,20':{ib:30, pe:1.0}, '0,24':{ib:40, pe:1.2}, '0,28':{ib:50, pe:2.0},
   '0,32':{ib:60, pe:3.0}, '0,37':{ib:70, pe:4.0}, '0,40':{ib:90, pe:5.0},
 };
 function getSpec(catClass, bitola){
   const table = catClass === 'marfim' ? SPEC_16X : SPEC_4X8X;
-  return table[bitola] || null;
+  return table[bitola] || SPEC_8X_EXTRA[bitola] || null;
 }
 function bitolaLabel(catClass, bitola){
   const spec = getSpec(catClass, bitola);
@@ -693,67 +696,72 @@ function specChipsHTML(spec, bitola){
   return chips.join('');
 }
 
-function addBucket(rows, metros, diams, preco, venda){
-  diams.forEach(d => rows.push({metros, bitola:d, preco, venda}));
+function addBucket(rows, metros, diams, preco){
+  diams.forEach(d => rows.push({metros, bitola:d, preco}));
 }
 
 const rows4X = [];
-addBucket(rows4X, 150,  diamFull,   30.00,  57.00);
-addBucket(rows4X, 300,  diamFull,   50.00,  87.00);
-addBucket(rows4X, 600,  diamAte037, 85.00,  147.00);
-addBucket(rows4X, 1200, diamAte028, 165.00, 247.00);
+addBucket(rows4X, 150,  diamFull,   30.00);
+addBucket(rows4X, 300,  diamFull,   50.00);
+addBucket(rows4X, 600,  diamAte037, 85.00);
+addBucket(rows4X, 1200, diamAte028, 165.00);
 
 const rows8X = [];
-addBucket(rows8X, 150,  diamFull,        42.00,  77.00);
-addBucket(rows8X, 150,  ['0,80','1,20'], 83.00,  167.00);
-addBucket(rows8X, 300,  diamFull,        72.00,  127.00);
-addBucket(rows8X, 600,  diamAte037,      127.00, 197.00);
-addBucket(rows8X, 1200, diamAte028,      237.00, 347.00);
+addBucket(rows8X, 150,  diamFull,        42.00);
+addBucket(rows8X, 150,  ['0,80','1,20'], 83.00);
+addBucket(rows8X, 300,  diamFull,        72.00);
+addBucket(rows8X, 600,  diamAte037,      127.00);
+addBucket(rows8X, 1200, diamAte028,      237.00);
 
 const rows16X = [];
-addBucket(rows16X, 150,  ['0,20','0,24','0,28'], 133.00, 247.00);
-addBucket(rows16X, 150,  ['0,32','0,37','0,40'], 123.00, 247.00);
-addBucket(rows16X, 300,  ['0,20','0,24','0,28'], 227.00, 357.00);
-addBucket(rows16X, 300,  ['0,32','0,37','0,40'], 217.00, 357.00);
-addBucket(rows16X, 600,  ['0,20','0,24','0,28'], 387.00, 567.00);
-addBucket(rows16X, 600,  ['0,32','0,37','0,40'], 367.00, 567.00);
-addBucket(rows16X, 1200, ['0,20','0,24','0,28'], 657.00, 897.00);
-addBucket(rows16X, 1200, ['0,32','0,37','0,40'], 597.00, 897.00);
+addBucket(rows16X, 150,  ['0,20','0,24','0,28'], 133.00);
+addBucket(rows16X, 150,  ['0,32','0,37','0,40'], 123.00);
+addBucket(rows16X, 300,  ['0,20','0,24','0,28'], 227.00);
+addBucket(rows16X, 300,  ['0,32','0,37','0,40'], 217.00);
+addBucket(rows16X, 600,  ['0,20','0,24','0,28'], 387.00);
+addBucket(rows16X, 600,  ['0,32','0,37','0,40'], 367.00);
+addBucket(rows16X, 1200, ['0,20','0,24','0,28'], 657.00);
+addBucket(rows16X, 1200, ['0,32','0,37','0,40'], 597.00);
 
 const priceMulti = { '4X': rows4X, '8X': rows8X };
+
+// Linhas multifilamento descontinuadas (não aparecem para seleção)
+const DESCONTINUADOS_MULTI = {
+  oceanica:  { '8X':['0,40'], '4X':['0,12','0,20'] },
+  amazonica: { '4X':['0,48','0,40','0,37'] },
+};
 
 const monoProducts = {
   n40:{ nome:'N40 Nylon', desc:'Leve e flexível, facilita os arremessos e oferece ótimo manuseio.', cor:'#7C818A',
     tabela:[
-      {bitola:'0,20 mm', lbs:'12,3 lb', preco:18.10, venda:29.00},{bitola:'0,26 mm', lbs:'18,5 lb', preco:23.20, venda:33.00},
-      {bitola:'0,30 mm', lbs:'26,2 lb', preco:27.20, venda:37.00},{bitola:'0,37 mm', lbs:'36,3 lb', preco:35.60, venda:47.00},
-      {bitola:'0,40 mm', lbs:'43,5 lb', preco:39.80, venda:53.00},{bitola:'0,43 mm', lbs:'49,4 lb', preco:44.20, venda:61.00},
-      {bitola:'0,50 mm', lbs:'59,7 lb', preco:55.80, venda:77.00},{bitola:'0,60 mm', lbs:'81,7 lb', preco:85.70, venda:127.00},
-      {bitola:'0,70 mm', lbs:'93,4 lb', preco:112.40, venda:147.00},
+      {bitola:'0,20 mm', lbs:'12,3 lb', preco:18.10},
+      {bitola:'0,30 mm', lbs:'26,2 lb', preco:27.20},{bitola:'0,37 mm', lbs:'36,3 lb', preco:35.60},
+      {bitola:'0,43 mm', lbs:'49,4 lb', preco:44.20},
+      {bitola:'0,60 mm', lbs:'81,7 lb', preco:85.70},
     ]},
   s50:{ nome:'S50 Soft', desc:'Mais macia e fácil de usar: arremessos suaves, baixa memória e menos embolo.', cor:'#6C4A9C',
     tabela:[
-      {bitola:'0,26 mm', lbs:'19,7 lb', preco:26.50, venda:59.00},{bitola:'0,30 mm', lbs:'27,1 lb', preco:28.40, venda:63.00},
-      {bitola:'0,33 mm', lbs:'34,3 lb', preco:32.80, venda:67.00},{bitola:'0,37 mm', lbs:'38,9 lb', preco:36.30, venda:69.00},
-      {bitola:'0,40 mm', lbs:'45,1 lb', preco:35.60, venda:71.00},{bitola:'0,43 mm', lbs:'49,4 lb', preco:40.30, venda:73.00},
+      {bitola:'0,30 mm', lbs:'27,1 lb', preco:28.40},
+      {bitola:'0,33 mm', lbs:'34,3 lb', preco:32.80},{bitola:'0,37 mm', lbs:'38,9 lb', preco:36.30},
+      {bitola:'0,40 mm', lbs:'45,1 lb', preco:35.60},{bitola:'0,43 mm', lbs:'49,4 lb', preco:40.30},
     ]},
   n90:{ nome:'N90 Nylon', desc:'Equilíbrio entre resistência e elasticidade, absorve impactos com segurança.', cor:'#AF2440',
     tabela:[
-      {bitola:'0,26 mm', lbs:'24,7 lb', preco:54.50, venda:103.00},{bitola:'0,30 mm', lbs:'34,1 lb', preco:60.50, venda:113.00},
-      {bitola:'0,33 mm', lbs:'42,5 lb', preco:66.80, venda:123.00},{bitola:'0,37 mm', lbs:'46,3 lb', preco:84.50, venda:143.00},
-      {bitola:'0,40 mm', lbs:'51,6 lb', preco:96.20, venda:153.00},
+      {bitola:'0,26 mm', lbs:'24,7 lb', preco:54.50},{bitola:'0,30 mm', lbs:'34,1 lb', preco:60.50},
+      {bitola:'0,33 mm', lbs:'42,5 lb', preco:66.80},{bitola:'0,37 mm', lbs:'46,3 lb', preco:84.50},
+      {bitola:'0,40 mm', lbs:'51,6 lb', preco:96.20},
     ]},
   c97:{ nome:'C97 Carbon Coat', desc:'Revestimento que aumenta a resistência à abrasão perto de estruturas.', cor:'#4A4D52',
     tabela:[
-      {bitola:'0,26 mm', lbs:'21,4 lb', preco:47.10, venda:97.00},{bitola:'0,30 mm', lbs:'29,9 lb', preco:52.00, venda:103.00},
-      {bitola:'0,33 mm', lbs:'38,1 lb', preco:59.80, venda:113.00},{bitola:'0,37 mm', lbs:'42,5 lb', preco:71.70, venda:123.00},
-      {bitola:'0,40 mm', lbs:'48,3 lb', preco:73.40, venda:133.00},
+      {bitola:'0,26 mm', lbs:'21,4 lb', preco:47.10},
+      {bitola:'0,33 mm', lbs:'38,1 lb', preco:59.80},{bitola:'0,37 mm', lbs:'42,5 lb', preco:71.70},
+      {bitola:'0,40 mm', lbs:'48,3 lb', preco:73.40},
     ]},
   w98:{ nome:'W98 Tungstênio', desc:'Alta densidade e sensibilidade: resposta rápida e controle na fisgada.', cor:'#A9821A',
     tabela:[
-      {bitola:'0,26 mm', lbs:'27,3 lb', preco:83.10, venda:150.00},{bitola:'0,30 mm', lbs:'36,9 lb', preco:91.10, venda:160.00},
-      {bitola:'0,33 mm', lbs:'45,0 lb', preco:102.30, venda:170.00},{bitola:'0,37 mm', lbs:'49,5 lb', preco:106.10, venda:180.00},
-      {bitola:'0,40 mm', lbs:'54,7 lb', preco:121.40, venda:190.00},
+      {bitola:'0,30 mm', lbs:'36,9 lb', preco:91.10},
+      {bitola:'0,33 mm', lbs:'45,0 lb', preco:102.30},{bitola:'0,37 mm', lbs:'49,5 lb', preco:106.10},
+      {bitola:'0,40 mm', lbs:'54,7 lb', preco:121.40},
     ]},
 };
 
@@ -849,6 +857,17 @@ function saveCart(){
   } catch(err){ /* modo privado ou storage indisponível: segue sem salvar */ }
 }
 let cart = loadSavedCart(); // {id, label, detail, unitPrice, qty}
+// Remove do pedido salvo itens descontinuados
+(function(){
+  const validos = new Set();
+  [['amazonica',['4X','8X']],['oceanica',['4X','8X']],['marfim',['16X']]].forEach(([cat,fils])=>{
+    fils.forEach(fil=>getMultiRows(cat, fil).forEach(r=>validos.add(`${cat}-${fil}-${r.metros}-${r.bitola}`)));
+  });
+  Object.keys(monoProducts).forEach(k=>monoProducts[k].tabela.forEach(o=>validos.add(`mono-${k}-${o.bitola}`)));
+  const antes = cart.length;
+  cart = cart.filter(it => validos.has(it.id));
+  if(cart.length !== antes) saveCart();
+})();
 
 // ---------- DADOS DO CLIENTE ----------
 const CLIENT_STORAGE_KEY = 'fishermans_cliente_atual';
@@ -1144,8 +1163,9 @@ document.getElementById('copy-btn').addEventListener('click', async ()=>{
 
 // ---------- RENDER PRODUCT CARDS ----------
 function getMultiRows(catClass, fil){
-  if(catClass==='marfim') return rows16X;
-  return priceMulti[fil];
+  const base = catClass==='marfim' ? rows16X : priceMulti[fil];
+  const fora = (DESCONTINUADOS_MULTI[catClass] || {})[fil] || [];
+  return base.filter(r => !fora.includes(r.bitola));
 }
 
 function multiCardHTML(catClass, lineName, filList){
@@ -1184,10 +1204,6 @@ function multiCardHTML(catClass, lineName, filList){
               <span class="lbl">Compra</span>
               <span class="price mono" id="${priceId}">${fmt(firstBitolas[0].preco)}</span>
             </div>
-            <div class="price-block">
-              <span class="lbl">Venda sugerida</span>
-              <span class="price venda mono" id="${priceId}-venda">${fmt(firstBitolas[0].venda)}</span>
-            </div>
           </div>
           <div class="add-row">
             <div class="qty-stepper">
@@ -1216,14 +1232,12 @@ function onMetrosChange(catClass, fil){
   const bitolaSel = document.getElementById(`bitola-${catClass}-${fil}`);
   bitolaSel.innerHTML = matching.map(r=>`<option value="${r.bitola}">${bitolaLabel(catClass, r.bitola)}</option>`).join('');
   document.getElementById(`price-${catClass}-${fil}`).textContent = fmt(matching[0].preco);
-  document.getElementById(`price-${catClass}-${fil}-venda`).textContent = fmt(matching[0].venda);
   document.getElementById(`spec-${catClass}-${fil}`).innerHTML = specChipsHTML(getSpec(catClass, matching[0].bitola), matching[0].bitola);
 }
 
 function onBitolaChange(catClass, fil){
   const row = currentMultiRow(catClass, fil);
   document.getElementById(`price-${catClass}-${fil}`).textContent = fmt(row.preco);
-  document.getElementById(`price-${catClass}-${fil}-venda`).textContent = fmt(row.venda);
   document.getElementById(`spec-${catClass}-${fil}`).innerHTML = specChipsHTML(getSpec(catClass, row.bitola), row.bitola);
 }
 
@@ -1286,10 +1300,6 @@ function monoCardHTML(){
               <span class="lbl">Compra</span>
               <span class="price mono" id="price-${selectId}">${fmt(p.tabela[0].preco)}</span>
             </div>
-            <div class="price-block">
-              <span class="lbl">Venda sugerida</span>
-              <span class="price venda mono" id="price-${selectId}-venda">${fmt(p.tabela[0].venda)}</span>
-            </div>
           </div>
           <div class="add-row">
             <div class="qty-stepper">
@@ -1313,7 +1323,6 @@ Object.keys(monoProducts).forEach(key=>{
   document.getElementById(id).addEventListener('change', ()=>{
     const o = monoProducts[key].tabela[parseInt(document.getElementById(id).value)];
     document.getElementById('price-'+id).textContent = fmt(o.preco);
-    document.getElementById('price-'+id+'-venda').textContent = fmt(o.venda);
     document.getElementById('spec-'+id).innerHTML =
       `<span class="spec-chip"><b>${o.bitola}</b></span><span class="spec-chip"><b>${o.lbs}</b></span>`;
   });
