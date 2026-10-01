@@ -886,7 +886,7 @@ function saveCart(){
 let cart = loadSavedCart(); // {id, label, detail, unitPrice, qty}
 // Acessórios: venda mínima de 10 unidades, preço unitário
 const accessoryProducts = {
-  copo:{ nome:'Copo Fishermans', sku:'CPO001', preco:79.90, min:10, cor:'#0E4256', img:'copo-fishermans.png',
+  copo:{ nome:'Copo Fishermans', sku:'CPO001', preco:89.90, min:10, cor:'#0E4256', img:'copo-fishermans.png',
     desc:'Copo térmico antiquedas com tecnologia SmartGrip, aço inoxidável e isolamento a vácuo para manter a bebida gelada.' },
   alicate:{ nome:'Alicate Fishermans', sku:'', preco:59.90, min:10, cor:'#3A4048', img:'alicate-fishermans.png',
     desc:'Alicate multifuncional em aço inox: corta multi e monofilamento, abre argolas e remove anzóis. Com mola e trava de segurança.' },
@@ -901,7 +901,11 @@ const accessoryProducts = {
   Object.keys(accessoryProducts).forEach(k=>validos.add(`acc-${k}`));
   const antes = cart.length;
   cart = cart.filter(it => validos.has(it.id));
-  if(cart.length !== antes) saveCart();
+  let mudou = cart.length !== antes;
+  // acessórios: sempre usar o preço atual
+  cart.forEach(it=>{ const k = it.id.startsWith('acc-') ? it.id.slice(4) : null;
+    if(k && accessoryProducts[k] && it.unitPrice !== accessoryProducts[k].preco){ it.unitPrice = accessoryProducts[k].preco; mudou = true; } });
+  if(mudou) saveCart();
 })();
 
 // ---------- DADOS DO CLIENTE ----------
