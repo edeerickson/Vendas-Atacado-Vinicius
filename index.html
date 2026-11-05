@@ -341,6 +341,7 @@ const monoProducts = {
 };
 
 
+
 const fmt = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
 const MIN_ORDER = 2500;
 const WA_NUMERO = '5541999439959';
@@ -419,6 +420,7 @@ function monoSku(key, bitolaStr){
 }
 
 
+
 // Acessórios: venda mínima de 10 unidades, preço unitário
 const accessoryProducts = {
   copo:{ nome:'Copo Fishermans', sku:'CPO001', preco:89.90, min:10, cor:'#0E4256', img:'copo-fishermans.png',
@@ -426,6 +428,7 @@ const accessoryProducts = {
   alicate:{ nome:'Alicate Fishermans', sku:'', preco:59.90, min:10, cor:'#3A4048', img:'alicate-fishermans.png',
     desc:'Alicate multifuncional em aço inox: corta multi e monofilamento, abre argolas e remove anzóis. Com mola e trava de segurança.' },
 };
+
 
 function getMultiRows(catClass, fil){
   const base = catClass==='marfim' ? rows16X : priceMulti[fil];
@@ -569,12 +572,12 @@ let cepUsado = null;
 function textoPedido(){
   const v = k => $('#c-'+k).value.trim();
   const L = ['Olá! Gostaria de fazer o seguinte pedido como revendedor Fishermans:', ''];
-  L.push(`Loja: ${v('nome')}`);
+  if(v('nome')) L.push(`Loja: ${v('nome')}`);
   if(v('cnpj')) L.push(`CNPJ: ${v('cnpj')}`);
   if(v('contato')) L.push(`Contato: ${v('contato')}`);
   if(v('whats')) L.push(`WhatsApp: ${v('whats')}`);
   if(v('cidade')) L.push(`Cidade/UF: ${v('cidade')}`);
-  L.push('');
+  if(L.length > 2) L.push('');
   let total = 0;
   cart.forEach(it => { const t = it.qty*it.unitPrice; total += t; L.push(`• ${it.sku?`[${it.sku}] `:''}${it.label} — ${it.detail} — Qtd: ${it.qty} — ${fmt(t)}`); });
   L.push('', `Total do pedido: ${fmt(total)}`);
@@ -587,7 +590,6 @@ function textoPedido(){
 }
 function podeEnviar(){
   if(!cart.length) return false;
-  if(!$('#c-nome').value.trim()){ fecharRevisao(); $('#c-nome').classList.add('erro'); $('#c-nome').focus(); window.scrollTo({top:0,behavior:'smooth'}); aviso('Preencha o nome da loja antes de enviar.'); return false; }
   return true;
 }
 function enviar(){ if(!podeEnviar()) return; window.open(`https://wa.me/${WA_NUMERO}?text=${encodeURIComponent(textoPedido())}`,'_blank'); }
