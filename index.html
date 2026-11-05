@@ -77,14 +77,14 @@ html,body{overflow-x:hidden}
 /* cartão de cada linha */
 .line{background:var(--s1);border:1px solid rgba(255,255,255,.08);border-radius:16px;margin-bottom:18px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.30)}
 .line-head{display:flex;gap:14px;align-items:center;padding:16px 18px;border-bottom:1px solid var(--ln);position:relative}
-.line-head::before{content:"";position:absolute;inset:0;background:var(--hd,transparent);opacity:.9}
+.line-head::before{content:"";position:absolute;inset:0;background:var(--hd,transparent)}
 .line-head>*{position:relative}
 .line-head img{width:62px;height:62px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;flex:none;cursor:zoom-in;box-shadow:0 6px 14px rgba(0,0,0,.4)}
 .line-head h3{font-size:25px;font-weight:800;letter-spacing:.02em;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .line-head p{margin:3px 0 0;color:#d2dde2;font-size:13.5px;line-height:1.45;max-width:70ch}
-.line-head .sub{margin-left:auto;text-align:right;font-family:var(--display);font-weight:700;font-size:15px;color:var(--orange-soft);white-space:nowrap}
-.hd-amazonica{--hd:linear-gradient(90deg,rgba(10,14,8,.88) 0%,rgba(10,14,8,.55) 55%,rgba(10,14,8,.2) 100%),url(img/textura-amazonica.jpg) center/cover}
-.hd-oceanica{--hd:linear-gradient(90deg,rgba(6,30,52,.9) 0%,rgba(6,30,52,.55) 55%,rgba(6,30,52,.15) 100%),url(img/textura-oceanica.jpg) center/cover}
+.line-head .sub{margin-left:auto;text-align:right;font-family:var(--display);font-weight:700;font-size:15px;color:#fff;white-space:nowrap;background:rgba(5,18,26,.72);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;backdrop-filter:blur(3px)}
+.hd-amazonica{--hd:linear-gradient(90deg,rgba(8,26,36,.95) 0%,rgba(8,26,36,.86) 38%,rgba(8,26,36,.30) 72%,rgba(8,26,36,0) 100%),url(img/textura-amazonica.jpg) 0 0/256px 256px repeat;border-bottom:3px solid #c96e2d}
+.hd-oceanica{--hd:linear-gradient(90deg,rgba(6,28,46,.95) 0%,rgba(6,28,46,.86) 38%,rgba(6,28,46,.28) 72%,rgba(6,28,46,0) 100%),url(img/textura-oceanica.jpg) 0 0/256px 256px repeat;border-bottom:3px solid #21b2e9}
 .hd-marfim{--hd:linear-gradient(100deg,#2d2b25 0%,#6e695c 60%,#a9a28f 100%)}
 .hd-cor{--hd:linear-gradient(120deg,var(--c),color-mix(in srgb,var(--c) 35%,#000))}
 
@@ -110,7 +110,7 @@ html,body{overflow-x:hidden}
 .min-note{font-size:12px;color:var(--orange-soft);font-weight:700}
 .vazio{padding:40px 16px;text-align:center;color:var(--soft)}
 @media (max-width:860px){.client{grid-template-columns:1fr 1fr}.client label:first-child{grid-column:1/-1}.search{flex:1 1 100%}}
-@media (max-width:560px){.q{width:60px;height:42px;font-size:20px}.grid td{padding:9px 4px}.grid td.d,.grid th:first-child{padding-left:12px}.grid td.d b{font-size:18px}.line-head{padding:14px 12px}.line-head .sub{display:none}.line-head img{width:52px;height:52px}.line-head h3{font-size:22px}}
+@media (max-width:560px){.hd-amazonica{--hd:linear-gradient(90deg,rgba(8,26,36,.95) 0%,rgba(8,26,36,.82) 60%,rgba(8,26,36,.45) 100%),url(img/textura-amazonica.jpg) 0 0/200px 200px repeat}.hd-oceanica{--hd:linear-gradient(90deg,rgba(6,28,46,.95) 0%,rgba(6,28,46,.82) 60%,rgba(6,28,46,.45) 100%),url(img/textura-oceanica.jpg) 0 0/200px 200px repeat}.q{width:60px;height:42px;font-size:20px}.grid td{padding:9px 4px}.grid td.d,.grid th:first-child{padding-left:12px}.grid td.d b{font-size:18px}.line-head{padding:14px 12px}.line-head .sub{display:none}.line-head img{width:52px;height:52px}.line-head h3{font-size:22px}}
 
 /* barra fixa do pedido */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#082a39;border-top:3px solid var(--orange);box-shadow:0 -10px 26px rgba(0,0,0,.4)}
@@ -342,6 +342,7 @@ const monoProducts = {
 
 
 
+
 const fmt = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
 const MIN_ORDER = 2500;
 const WA_NUMERO = '5541999439959';
@@ -421,6 +422,7 @@ function monoSku(key, bitolaStr){
 
 
 
+
 // Acessórios: venda mínima de 10 unidades, preço unitário
 const accessoryProducts = {
   copo:{ nome:'Copo Fishermans', sku:'CPO001', preco:89.90, min:10, cor:'#0E4256', img:'copo-fishermans.png',
@@ -428,6 +430,7 @@ const accessoryProducts = {
   alicate:{ nome:'Alicate Fishermans', sku:'', preco:59.90, min:10, cor:'#3A4048', img:'alicate-fishermans.png',
     desc:'Alicate multifuncional em aço inox: corta multi e monofilamento, abre argolas e remove anzóis. Com mola e trava de segurança.' },
 };
+
 
 
 function getMultiRows(catClass, fil){
