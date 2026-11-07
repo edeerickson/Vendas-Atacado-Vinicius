@@ -230,6 +230,7 @@ textarea,.cep input{width:100%;background:var(--s2);border:1px solid rgba(255,25
   </div>
 </aside>
 
+<script src="fx-disponibilidade.js?v=1"></script>
 <script>
 /* =====================================================================
    DADOS (preços, bitolas e itens fora de estoque)
@@ -311,12 +312,16 @@ const DESCONTINUADOS_MULTI = {
 const monoProducts = {
   n40:{ nome:'N40 Nylon', desc:'Leve e flexível, facilita os arremessos e oferece ótimo manuseio.', cor:'#7C818A',
     tabela:[
-      {bitola:'0,60 mm', lbs:'81,7 lb', preco:85.70},
+      {bitola:'0,20 mm', lbs:'12,3 lb', preco:18.10},{bitola:'0,26 mm', lbs:'18,5 lb', preco:23.20},
+      {bitola:'0,30 mm', lbs:'26,2 lb', preco:27.20},{bitola:'0,37 mm', lbs:'36,3 lb', preco:35.60},
+      {bitola:'0,40 mm', lbs:'43,5 lb', preco:39.80},{bitola:'0,43 mm', lbs:'49,4 lb', preco:44.20},
+      {bitola:'0,50 mm', lbs:'59,7 lb', preco:55.80},{bitola:'0,60 mm', lbs:'81,7 lb', preco:85.70},
+      {bitola:'0,70 mm', lbs:'93,4 lb', preco:112.40},
     ]},
   s50:{ nome:'S50 Soft', desc:'Mais macia e fácil de usar: arremessos suaves, baixa memória e menos embolo.', cor:'#6C4A9C',
     tabela:[
-      {bitola:'0,30 mm', lbs:'27,1 lb', preco:28.40},
-      {bitola:'0,33 mm', lbs:'34,3 lb', preco:32.80},
+      {bitola:'0,26 mm', lbs:'19,7 lb', preco:26.50},{bitola:'0,30 mm', lbs:'27,1 lb', preco:28.40},
+      {bitola:'0,33 mm', lbs:'34,3 lb', preco:32.80},{bitola:'0,37 mm', lbs:'38,9 lb', preco:36.30},
       {bitola:'0,40 mm', lbs:'45,1 lb', preco:35.60},{bitola:'0,43 mm', lbs:'49,4 lb', preco:40.30},
     ]},
   n90:{ nome:'N90 Nylon', desc:'Equilíbrio entre resistência e elasticidade, absorve impactos com segurança.', cor:'#AF2440',
@@ -327,17 +332,24 @@ const monoProducts = {
     ]},
   c97:{ nome:'C97 Carbon Coat', desc:'Revestimento que aumenta a resistência à abrasão perto de estruturas.', cor:'#4A4D52',
     tabela:[
-      {bitola:'0,26 mm', lbs:'21,4 lb', preco:47.10},
+      {bitola:'0,26 mm', lbs:'21,4 lb', preco:47.10},{bitola:'0,30 mm', lbs:'29,9 lb', preco:52.00},
       {bitola:'0,33 mm', lbs:'38,1 lb', preco:59.80},{bitola:'0,37 mm', lbs:'42,5 lb', preco:71.70},
       {bitola:'0,40 mm', lbs:'48,3 lb', preco:73.40},
     ]},
   w98:{ nome:'W98 Tungstênio', desc:'Alta densidade e sensibilidade: resposta rápida e controle na fisgada.', cor:'#A9821A',
     tabela:[
-      {bitola:'0,30 mm', lbs:'36,9 lb', preco:91.10},
+      {bitola:'0,26 mm', lbs:'27,3 lb', preco:83.10},{bitola:'0,30 mm', lbs:'36,9 lb', preco:91.10},
       {bitola:'0,33 mm', lbs:'45,0 lb', preco:102.30},{bitola:'0,37 mm', lbs:'49,5 lb', preco:106.10},
       {bitola:'0,40 mm', lbs:'54,7 lb', preco:121.40},
     ]},
 };
+// Bitolas que este painel não mostrava antes da ligação com o Painel do atacado.
+// Valem só enquanto o painel ainda não decidiu sobre elas (ou se a lista não carregar).
+const MONO_FORA = { n40:['0,20 mm','0,26 mm','0,30 mm','0,37 mm','0,40 mm','0,43 mm','0,50 mm','0,70 mm'], s50:['0,26 mm','0,37 mm'], c97:['0,30 mm'], w98:['0,26 mm'] };
+/* ---------- disponibilidade (Pedidos › Produtos e preços, no Painel do atacado) ----------
+   À venda lá aparece aqui; fora de venda lá some daqui. Sem decisão no painel (ou sem internet), vale o que este painel já mostrava. */
+const SKU_ACESSORIO = { alicate:'ALICATE' };
+const fxMostra = (sku, hoje) => (window.FXDisp && FXDisp.carregado() && sku) ? FXDisp.mostrar(sku, hoje) : hoje;
 
 
 
@@ -435,7 +447,7 @@ const accessoryProducts = {
 function getMultiRows(catClass, fil){
   const base = catClass==='marfim' ? rows16X : priceMulti[fil];
   const fora = (DESCONTINUADOS_MULTI[catClass] || {})[fil] || [];
-  return base.filter(r => !fora.includes(r.bitola));
+  return base.filter(r => fxMostra(multiSku(catClass, fil, r.metros, r.bitola), !fora.includes(r.bitola)));
 }
 const IMG = {"amazonica_4x": "img/amazonica-4x.jpg", "amazonica_8x": "img/amazonica-8x.jpg", "oceanica_4x": "img/oceanica-4x.jpg", "oceanica_8x": "img/oceanica-8x.jpg", "marfim_16x": "img/marfim-16x.jpg", "n40": "img/n40.jpg", "s50": "img/s50.jpg", "n90": "img/n90.jpg", "c97": "img/c97.jpg", "w98": "img/w98.jpg", "copo": "copo-fishermans.png", "alicate": "alicate-fishermans.png"};
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
@@ -471,18 +483,20 @@ function linhas(){
   }));
   Object.keys(monoProducts).forEach(k => { const p = monoProducts[k];
     L.push({aba:'mono', id:`mono-${k}`, titulo:p.nome, sub:'X1 · carretel 300 m', desc:p.desc, img:IMG[k], hd:'hd-cor', cor:p.cor, colunas:['300 m'],
-      linhas: p.tabela.map(o => ({ rot:o.bitola, sub:o.lbs, celulas:[{ id:`mono-${k}-${o.bitola}`, preco:o.preco, sku:monoSku(k,o.bitola), label:p.nome, detail:`300m · ${o.bitola} (${o.lbs})`, texto:`${p.nome} ${mm(o.bitola)} 300m ${o.lbs}` }] }))
+      linhas: p.tabela.filter(o => fxMostra(monoSku(k, o.bitola), !(MONO_FORA[k] || []).includes(o.bitola))).map(o => ({ rot:o.bitola, sub:o.lbs, celulas:[{ id:`mono-${k}-${o.bitola}`, preco:o.preco, sku:monoSku(k,o.bitola), label:p.nome, detail:`300m · ${o.bitola} (${o.lbs})`, texto:`${p.nome} ${mm(o.bitola)} 300m ${o.lbs}` }] }))
     });
   });
-  Object.keys(accessoryProducts).forEach(k => { const p = accessoryProducts[k];
+  Object.keys(accessoryProducts).filter(k => fxMostra(accessoryProducts[k].sku || SKU_ACESSORIO[k], true)).forEach(k => { const p = accessoryProducts[k];
     L.push({aba:'acessorios', id:`acc-${k}`, titulo:p.nome, sub:`mínimo ${p.min} unidades`, desc:p.desc, img:p.img, hd:'hd-cor', cor:p.cor, colunas:['Unidade'],
       linhas:[{ rot:'Unidade', sub:`mínimo ${p.min} un`, celulas:[{ id:`acc-${k}`, preco:p.preco, min:p.min, sku:p.sku, label:p.nome, detail:`mínimo ${p.min} un · preço unitário`, texto:`${p.nome} acessorio` }] }]
     });
   });
-  return L;
+  return L.filter(l => l.linhas.some(r => r.celulas.some(Boolean)));
 }
-const LINHAS = linhas();
-const CELULAS = {}; LINHAS.forEach(l => l.linhas.forEach(r => r.celulas.forEach(c => { if(c){ c.linha = l; CELULAS[c.id] = c; } })));
+let LINHAS = linhas();
+const CELULAS = {};
+function indexar(){ Object.keys(CELULAS).forEach(k => delete CELULAS[k]); LINHAS.forEach(l => l.linhas.forEach(r => r.celulas.forEach(c => { if(c){ c.linha = l; CELULAS[c.id] = c; } }))); }
+indexar();
 
 /* =====================================================================
    PEDIDO (mesmo formato salvo pelo painel anterior)
@@ -533,7 +547,8 @@ function filtroBusca(){
     return t.every(x => /^\d{3,4}$/.test(x) ? alvo.includes(x+'m') : alvo.includes(x)); };
 }
 function render(){
-  $('#tabs').innerHTML = ABAS.map(a => { const u = cart.filter(it => CELULAS[it.id] && CELULAS[it.id].linha.aba === a.id).reduce((s,it)=>s+it.qty,0);
+  const abas = ABAS.filter(a => LINHAS.some(l => l.aba === a.id)); if(abas.length && !abas.some(a => a.id === aba)) aba = abas[0].id;
+  $('#tabs').innerHTML = abas.map(a => { const u = cart.filter(it => CELULAS[it.id] && CELULAS[it.id].linha.aba === a.id).reduce((s,it)=>s+it.qty,0);
     return `<button class="tab" type="button" data-aba="${a.id}" aria-pressed="${!busca && a.id===aba}">${a.nome}${u?`<b title="unidades no pedido">${u} un</b>`:''}</button>`; }).join('');
   $('#limpar-busca').hidden = !busca;
   let h;
@@ -630,6 +645,13 @@ $('#calc-frete').onclick = () => { const d = $('#cep').value.replace(/\D/g,''); 
   const f = calcularFreteEstimado(d, un); cepUsado = f.erro ? null : d;
   $('#frete').innerHTML = f.erro ? f.erro : `Estimativa PAC (${f.regionLabel}): <b>${fmt(f.valorEstimado)}</b><br>Valor aproximado; confira em <a href="https://www.correios.com.br/enviar/precisa-de-ajuda/calculador-remoto-de-precos-e-prazos" target="_blank" rel="noopener">correios.com.br</a>.`; };
 
+function aplicarDisponibilidade(){
+  LINHAS = linhas(); indexar();
+  const antes = cart.length; cart = cart.filter(it => CELULAS[it.id]);
+  if(cart.length !== antes){ salvar(); aviso('Alguns itens saíram de venda e foram tirados do pedido.'); }
+  render(); atualizar();
+}
+document.addEventListener('fx-disp', aplicarDisponibilidade);
 render(); atualizar();
 </script>
 </body>
