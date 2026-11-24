@@ -63,6 +63,7 @@ h1,h2,h3,.k,.cod,th{font-family:"Roboto Condensed","Arial Narrow",Arial,sans-ser
 
 /* seções */
 main{padding-bottom:120px}
+main.wrap{padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 .fam{padding-top:22px}
 .fam > h2{font-size:28px;font-weight:900;line-height:1;margin:0 0 4px}
 .fam > p{margin:0 0 12px;color:var(--mut);font-size:13.5px}
@@ -235,6 +236,7 @@ table.g{width:100%;border-collapse:collapse}
 
 <script src="fx-disponibilidade.js?v=2"></script>
 <script>
+const SEM_ESTOQUE=false; // true = mostra também as bitolas sem estoque, marcadas
 const WA='5541999439959', ST='fx-pedido-Vendas-Atacado-Vinicius', CLI_KEY='fishermans_cliente_atual', MIN=2500, BASE='/Catalogo/assets/v2/';
 const FAMS=[
   {id:'ama',nome:'Amazônica',desc:'Multifilamento camuflado · águas escuras',linhas:[['Amazônica X4','4X','amazonica-4x'],['Amazônica X8','8X','amazonica-8x']]},
@@ -250,16 +252,19 @@ const ord=m=>parseInt(m)||0;
 const nome=l=>l.replace(' X4',' 4X').replace(' X8',' 8X').replace(' X16',' 16X').replace('Mono ','');
 const compra=i=>C==='f'?i.fc:i.oc, venda=i=>C==='f'?i.fv:i.ov;
 // disponibilidade: o que o Painel do atacado decidiu; se nunca decidiu, vale a lista padrão do catálogo
-function ativo(i){const F=window.FXDisp;let e=null;if(F&&F.carregado&&F.carregado()){e=F.estado(i.sku);if(e===null&&i.skuCat&&i.skuCat!==i.sku)e=F.estado(i.skuCat)}return e===null?PADRAO.has(i.skuCat+'|'+i.m+'|'+i.l):e}
-const alicateOk=()=>{const F=window.FXDisp;return !F||!F.carregado||!F.carregado()||F.familiaDisponivel('alicate')};
-const vende=i=>ativo(i)&&compra(i)!=null;
+function ativo(i){if(i.l==='Boné Fishermans'){const F=window.FXDisp;return !!(F&&F.carregado&&F.carregado()&&F.familiaDisponivel('bone'))}const F=window.FXDisp;let e=null;if(F&&F.carregado&&F.carregado()){e=F.estado(i.sku);if(e===null&&i.skuCat&&i.skuCat!==i.sku)e=F.estado(i.skuCat)}return e===null?PADRAO.has(i.skuCat+'|'+i.m+'|'+i.l):e}
+const alicateDisp=()=>{const F=window.FXDisp;return !F||!F.carregado||!F.carregado()||F.familiaDisponivel('alicate')};
+const alicateOk=()=>SEM_ESTOQUE||alicateDisp();
+const vende=i=>(SEM_ESTOQUE||ativo(i))&&compra(i)!=null;
+const semEst=i=>SEM_ESTOQUE&&i.l&&ITENS.includes(i)&&!ativo(i);
 const COPO=()=>ITENS.filter(i=>i.l==='Copo Fishermans');
+const BONE=()=>ITENS.find(i=>i.l==='Boné Fishermans');
 
 function salvar(){try{localStorage.setItem(ST,JSON.stringify({C,Q,PAG,OBS}))}catch(e){}}
 function carregar(){try{const s=JSON.parse(localStorage.getItem(ST)||'null');if(s){C=s.C||null;Q=s.Q||{};PAG=s.PAG||'Pix';OBS=s.OBS||''}}catch(e){}}
 
 // ---------- grade ----------
-function inp(i){return `<input class="q" type="number" inputmode="numeric" min="0" step="1" data-k="${key(i)}" aria-label="${nome(i.l)} ${i.m} ${bit(i.b)}">`}
+function inp(i){return `<input class="q${semEst(i)?' fo':''}" type="number" inputmode="numeric" min="0" step="1" data-k="${key(i)}" aria-label="${nome(i.l)} ${i.m} ${bit(i.b)}">`}
 function montar(){
   let nav='',h='';
   FAMS.forEach(f=>{
@@ -272,11 +277,11 @@ function montar(){
       let head,body;
       if(f.mono){
         head='<tr><th>Bitola</th><th>Compra</th><th>Qtd. (300m)</th></tr>';
-        body=bits.map(b=>{const i=its.find(x=>x.b===b);return `<tr><td class="b">${bit(b)}<small>${lb(b)}</small></td><td><span class="pp">${brl(compra(i))}</span></td><td>${inp(i)}</td></tr>`}).join('');
+        body=bits.map(b=>{const i=its.find(x=>x.b===b);return `<tr><td class="b">${bit(b)}<small>${lb(b)}</small></td><td><span class="pp">${brl(compra(i))}</span></td><td>${inp(i)}${semEst(i)?'<span class="se">sem estoque</span>':''}</td></tr>`}).join('');
       }else{
         head=`<tr><th>Bitola</th>${mets.map(m=>`<th>${m}${p1[m]!=null?`<small>${brl(p1[m])}</small>`:''}</th>`).join('')}</tr>`;
         body=bits.map(b=>`<tr><td class="b">${bit(b)}<small>${lb(b)}</small></td>${mets.map(m=>{const i=its.find(x=>x.b===b&&x.m===m);
-          return i?`<td>${inp(i)}${p1[m]==null?`<span class="pp">${brl(compra(i))}</span>`:''}</td>`:'<td class="na">—</td>'}).join('')}</tr>`).join('');
+          return i?`<td>${inp(i)}${p1[m]==null?`<span class="pp">${brl(compra(i))}</span>`:''}${semEst(i)?'<span class="se">sem estoque</span>':''}</td>`:'<td class="na">—</td>'}).join('')}</tr>`).join('');
       }
       return `<article class="blk${f.mono?' mb':''}" id="l-${l.replace(/\W+/g,'')}" ${cor?`style="--mc:${cor}"`:''}><div class="bh"><img src="${BASE+img}.jpg" alt=""><div>${f.mono?'':`<span class="cod">${cod}</span>`}<h3>${f.mono?cod:f.nome.replace(' 16X','')+' '+cod}</h3><p>${its.length} ${its.length==1?'item':'itens'}${f.mono?' · carretel 300m':' · '+mets.join(', ')}</p></div><div class="sub" data-sub="${l}"></div></div>
         <div class="tw"><table class="g${f.mono?' mono':''}"><thead>${head}</thead><tbody>${body}</tbody></table></div></article>`;
@@ -286,9 +291,12 @@ function montar(){
     h+=`<section class="fam" id="f-${f.id}"><h2>${f.nome}</h2><p>${f.desc}</p>${blocos}</section>`;
   });
   const cp=COPO().filter(vende); const c10=cp.find(x=>x.m==='10 un'), c15=cp.find(x=>x.m!=='10 un');
-  const copo=c10?`<div class="acc"><img src="${BASE}copo.jpg" alt=""><div class="t"><h3>Copo Fishermans</h3><p>${brl(compra(c10))} a partir de 10 un${c15?' · '+brl(compra(c15))+' acima de 15 un':''}</p><p class="warn" data-w="copo"></p></div><input class="q" type="number" inputmode="numeric" min="0" step="1" data-k="COPO" aria-label="Quantidade de copos"></div>`:'';
-  const al=alicateOk()?`<div class="acc"><img src="${BASE}alicate.jpg" alt=""><div class="t"><h3>Alicate Fishermans</h3><p>${brl(59.9)} · mínimo de 10 un</p><p class="warn" data-w="alicate"></p></div><input class="q" type="number" inputmode="numeric" min="0" step="1" data-k="ALICATE" aria-label="Quantidade de alicates"></div>`:'';
-  if(copo||al){nav+=`<a href="#f-acc">Acessórios<span data-nav="acc"></span></a>`;h+=`<section class="fam" id="f-acc"><h2>Acessórios</h2><p>Venda a partir de 10 unidades por item.</p><article class="blk">${copo}${al}</article></section>`}
+  const copo=c10?`<div class="acc"><img src="${BASE}copo.jpg" alt=""><div class="t"><h3>Copo Fishermans</h3><p>${brl(compra(c10))} a partir de 10 un${c15?' · '+brl(compra(c15))+' acima de 15 un':''}</p>${c10&&semEst(c10)?'<p class="warn">Sem estoque no momento</p>':''}<p class="warn" data-w="copo"></p></div><input class="q${c10&&semEst(c10)?' fo':''}" type="number" inputmode="numeric" min="0" step="1" data-k="COPO" aria-label="Quantidade de copos"></div>`:'';
+  const al=alicateOk()?`<div class="acc"><img src="${BASE}alicate.jpg" alt=""><div class="t"><h3>Alicate Fishermans</h3><p>${brl(59.9)} · mínimo de 10 un</p>${SEM_ESTOQUE&&!alicateDisp()?'<p class="warn">Sem estoque no momento</p>':''}<p class="warn" data-w="alicate"></p></div><input class="q${SEM_ESTOQUE&&!alicateDisp()?' fo':''}" type="number" inputmode="numeric" min="0" step="1" data-k="ALICATE" aria-label="Quantidade de alicates"></div>`:'';
+  const bt=BONE(), bOk=bt&&vende(bt);
+  const bone=bOk?`<div class="acc"><img src="${BASE}bone.jpg" alt=""><div class="t"><h3>Boné Fishermans</h3><p>${brl(compra(bt))} · boné trucker ajustável</p>${semEst(bt)?'<p class="warn">Sem estoque no momento</p>':''}</div><input class="q${semEst(bt)?' fo':''}" type="number" inputmode="numeric" min="0" step="1" data-k="BONE" aria-label="Quantidade de bonés"></div>`:'';
+  if(copo||al||bone){nav+=`<a href="#f-acc">Acessórios<span data-nav="acc"></span></a>`;h+=`<section class="fam" id="f-acc"><h2>Acessórios</h2><p>Copo e Alicate: venda a partir de 10 unidades.</p><article class="blk">${copo}${al}${bone}</article></section>`}
+  if(SEM_ESTOQUE&&h) h='<p class="leg"><i></i>Borda tracejada: sem estoque no momento. Pode incluir no pedido; o vendedor confirma o prazo.</p>'+h;
   $('#nav').innerHTML=nav; $('#main').innerHTML=h||'<p class="load">Nenhum produto disponível no momento.</p>';
   document.querySelectorAll('.q').forEach(e=>{const v=Q[e.dataset.k];if(v)e.value=v;e.classList.toggle('on',!!v)});
   atualizar();
@@ -298,12 +306,13 @@ function linhasPedido(){
   const out=[], fora=[];
   ITENS.forEach(i=>{if(i.l==='Copo Fishermans')return;const q=Q[key(i)];if(!q)return;
     if(!vende(i)){fora.push(i);return}
-    const c=compra(i),v=venda(i);out.push({i,q,c,sub:c*q,lu:v!=null?(v-c)*q:0})});
+    const c=compra(i),v=venda(i);out.push({i,q,c,sub:c*q,lu:v!=null?(v-c)*q:0,se:semEst(i)})});
   const ORD=FAMS.flatMap(f=>f.linhas.map(l=>l[0]));
   out.sort((x,y)=>ORD.indexOf(x.i.l)-ORD.indexOf(y.i.l)||ord(x.i.m)-ord(y.i.m)||parseFloat(x.i.b)-parseFloat(y.i.b));
   const qc=Q.COPO||0, cp=COPO().filter(vende);
-  if(qc&&cp.length){const t=cp.find(x=>x.m===(qc>15?'Acima de 15 un':'10 un'))||cp[0];const c=compra(t);out.push({i:{l:'Copo Fishermans',m:'',b:'',sku:t.sku},q:qc,c,sub:c*qc,lu:(venda(t)-c)*qc,acc:'Copo Fishermans'})}
-  const qa=Q.ALICATE||0; if(qa&&alicateOk()) out.push({i:{l:'Alicate Fishermans',m:'',b:''},q:qa,c:59.9,sub:59.9*qa,lu:0,acc:'Alicate Fishermans'});
+  if(qc&&cp.length){const t=cp.find(x=>x.m===(qc>15?'Acima de 15 un':'10 un'))||cp[0];const c=compra(t);out.push({i:{l:'Copo Fishermans',m:'',b:'',sku:t.sku},q:qc,c,sub:c*qc,lu:(venda(t)-c)*qc,acc:'Copo Fishermans',se:semEst(t)})}
+  const qa=Q.ALICATE||0; if(qa&&alicateOk()) out.push({i:{l:'Alicate Fishermans',m:'',b:''},q:qa,c:59.9,sub:59.9*qa,lu:0,acc:'Alicate Fishermans',se:SEM_ESTOQUE&&!alicateDisp()});
+  const qb=Q.BONE||0, bt=BONE(); if(qb&&bt){if(vende(bt)){const c=compra(bt);out.push({i:{l:'Boné Fishermans',m:'',b:'',sku:bt.sku},q:qb,c,sub:c*qb,lu:(venda(bt)-c)*qb,acc:'Boné Fishermans',se:semEst(bt)})}else fora.push(bt)}
   return {ls:out,fora};
 }
 function atualizar(){
@@ -314,7 +323,7 @@ function atualizar(){
   $('#rever').disabled=!un;
   document.querySelectorAll('[data-sub]').forEach(e=>{const s=ls.filter(x=>x.i.l===e.dataset.sub);const v=s.reduce((a,x)=>a+x.sub,0),q=s.reduce((a,x)=>a+x.q,0);e.innerHTML=q?`${brl(v)}<small>${q} un</small>`:''});
   FAMS.forEach(f=>{const e=document.querySelector(`[data-nav="${f.id}"]`);if(!e)return;const q=ls.filter(x=>f.linhas.some(l=>l[0]===x.i.l)).reduce((a,x)=>a+x.q,0);e.textContent=q||''});
-  const ea=document.querySelector('[data-nav="acc"]');if(ea)ea.textContent=((Q.COPO||0)+(Q.ALICATE||0))||'';
+  const ea=document.querySelector('[data-nav="acc"]');if(ea)ea.textContent=((Q.COPO||0)+(Q.ALICATE||0)+(Q.BONE||0))||'';
   [['copo',Q.COPO],['alicate',Q.ALICATE]].forEach(([k,q])=>{const e=document.querySelector(`[data-w="${k}"]`);if(e)e.textContent=q&&q<10?'Mínimo de 10 unidades':''});
 }
 // ---------- frete (estimativa PAC, origem Curitiba/PR) ----------
@@ -328,13 +337,14 @@ function revisar(){
   if(tot<MIN) al.push(`Faltam <b>${brl(MIN-tot)}</b> para o pedido mínimo de R$ 2.500,00. Você pode enviar mesmo assim e combinar com o vendedor.`);
   if(Q.COPO&&Q.COPO<10) al.push('Copo: mínimo de 10 unidades.');
   if(Q.ALICATE&&Q.ALICATE<10) al.push('Alicate: mínimo de 10 unidades.');
-  if(fora.length) al.push(`${fora.length==1?'Este item não está disponível':'Estes itens não estão disponíveis'} ${C==='f'?'na loja física':'na loja online'} e ${fora.length==1?'ficou':'ficaram'} fora do pedido: ${fora.map(i=>nome(i.l)+' '+i.m+' '+bit(i.b)).join(', ')}.`);
+  const se=ls.filter(x=>x.se); if(se.length) al.push(`${se.length==1?'1 item está':se.length+' itens estão'} sem estoque no momento: ${se.map(x=>x.acc||nome(x.i.l)+' '+x.i.m+' '+bit(x.i.b)).join(', ')}. Eles seguem no pedido marcados, e o vendedor confirma o prazo.`);
+  if(fora.length) al.push(`${fora.length==1?'Este item não está disponível':'Estes itens não estão disponíveis'} ${C==='f'?'na loja física':'na loja online'} e ${fora.length==1?'ficou':'ficaram'} fora do pedido: ${fora.map(i=>i.b==='unidade'?nome(i.l):nome(i.l)+' '+i.m+' '+bit(i.b)).join(', ')}.`);
   $('#alertas').innerHTML=al.map(a=>`<div class="alert">${a}</div>`).join('');
   let h='',g='';
   ls.forEach(x=>{const gr=x.acc?'Acessórios':nome(x.i.l)+' '+x.i.m;if(gr!==g){g=gr;h+=`<div class="gh">${gr}</div>`}
-    h+=`<div class="li"><span>${x.acc?x.acc.replace(' Fishermans',''):bit(x.i.b)} · ${x.q} × ${brl(x.c)}</span><span>${brl(x.sub)}</span></div>`});
+    h+=`<div class="li"><span>${x.acc?x.acc.replace(' Fishermans',''):bit(x.i.b)} · ${x.q} × ${brl(x.c)}${x.se?' <em>sem estoque</em>':''}</span><span>${brl(x.sub)}</span></div>`});
   $('#lista').innerHTML=h||'<p>Nenhum item.</p>';
-  $('#sum').innerHTML=`<div><span>Canal</span><b>${C==='f'?'Loja física':'Loja online'}</b></div><div><span>Unidades</span><b>${ls.reduce((a,x)=>a+x.q,0)}</b></div><div class="lu"><span>Seu lucro estimado*</span><span>${brl(lu)}</span></div><div class="big"><span>Total</span><span>${brl(tot)}</span></div><p style="margin:6px 0 0;font-size:11.5px;color:var(--mut)">* Vendendo pela ${C==='f'?'venda mínima da loja física':'pelo anúncio mínimo'}. Sem o Alicate e sem frete.</p>`;
+  $('#sum').innerHTML=`<div><span>Canal</span><b>${C==='f'?'Loja física':'Loja online'}</b></div><div><span>Unidades</span><b>${ls.reduce((a,x)=>a+x.q,0)}</b></div><div class="lu"><span>Seu lucro estimado*</span><span>${brl(lu)}</span></div><div class="big"><span>Total</span><span>${brl(tot)}</span></div><p style="margin:6px 0 0;font-size:11.5px;color:var(--mut)">* Vendendo ${C==='f'?'pela venda mínima da loja física':'pelo anúncio mínimo'}. Sem o Alicate e sem frete.</p>`;
   $('#pgPix').textContent=brl(tot)+' à vista'; $('#pg3x').textContent='3 × '+brl(Math.round(tot/3*100)/100);
   document.querySelectorAll('[name=pag]').forEach(r=>r.checked=r.value===PAG);
   $('#obs').value=OBS; $('#okmsg').textContent=''; mostrarFrete();
@@ -348,7 +358,7 @@ function texto(){
   const L=['Olá! Gostaria de fazer o seguinte pedido como revendedor Fishermans:','',`Canal: ${C==='f'?'Loja física':'Loja online'}`];
   [['Loja','nome'],['CNPJ','cnpj'],['Contato','contato'],['WhatsApp','whats'],['Cidade/UF','cidade']].forEach(([a,k])=>{if(cli(k))L.push(`${a}: ${cli(k)}`)});
   L.push('');
-  ls.forEach(x=>L.push(`• ${x.i.sku?'['+x.i.sku+'] ':''}${x.acc||nome(x.i.l)} — ${x.acc?'unidade':x.i.m+' · '+bit(x.i.b)+' mm'} — Qtd: ${x.q} — ${brl(x.sub)}`));
+  ls.forEach(x=>L.push(`• ${x.i.sku?'['+x.i.sku+'] ':''}${x.acc||nome(x.i.l)} — ${x.acc?'unidade':x.i.m+' · '+bit(x.i.b)+' mm'} — Qtd: ${x.q} — ${brl(x.sub)}${x.se?' (sem estoque no momento)':''}`));
   L.push('',`Total do pedido: ${brl(tot)} (${un} un)`,`Pagamento: ${PAG}${PAG!=='Pix'?' (3 × '+brl(Math.round(tot/3*100)/100)+')':''}`);
   const f=CEP?frete(CEP,un):null;
   L.push(f&&!f.erro?`Frete aproximado (PAC, CEP ${CEP.slice(0,5)}-${CEP.slice(5)}): ${brl(f.valor)} *estimativa, valor exato a confirmar`:'(valor do frete a calcular)');
