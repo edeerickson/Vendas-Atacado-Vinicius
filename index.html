@@ -252,7 +252,7 @@ const ord=m=>parseInt(m)||0;
 const nome=l=>l.replace(' X4',' 4X').replace(' X8',' 8X').replace(' X16',' 16X').replace('Mono ','');
 const compra=i=>C==='f'?i.fc:i.oc, venda=i=>C==='f'?i.fv:i.ov;
 // disponibilidade: o que o Painel do atacado decidiu; se nunca decidiu, vale a lista padrão do catálogo
-function ativo(i){if(i.l==='Boné Fishermans'){const F=window.FXDisp;return !!(F&&F.carregado&&F.carregado()&&F.familiaDisponivel('bone'))}const F=window.FXDisp;let e=null;if(F&&F.carregado&&F.carregado()){e=F.estado(i.sku);if(e===null&&i.skuCat&&i.skuCat!==i.sku)e=F.estado(i.skuCat)}return e===null?PADRAO.has(i.skuCat+'|'+i.m+'|'+i.l):e}
+function ativo(i){if(i.l==='Boné Fishermans')return true; /* boné: em estoque, confirmado pelo Ede (o Painel do atacado ainda marca como indisponível) */const F=window.FXDisp;let e=null;if(F&&F.carregado&&F.carregado()){e=F.estado(i.sku);if(e===null&&i.skuCat&&i.skuCat!==i.sku)e=F.estado(i.skuCat)}return e===null?PADRAO.has(i.skuCat+'|'+i.m+'|'+i.l):e}
 const alicateDisp=()=>{const F=window.FXDisp;return !F||!F.carregado||!F.carregado()||F.familiaDisponivel('alicate')};
 const alicateOk=()=>SEM_ESTOQUE||alicateDisp();
 const vende=i=>(SEM_ESTOQUE||ativo(i))&&compra(i)!=null;
